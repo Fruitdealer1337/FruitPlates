@@ -74,6 +74,10 @@ local function TimeColor(seconds)
     return 1, 1, 1
 end
 
+local function IsNPCUnitType(unitType)
+    return unitType == "ENEMY_NPC" or unitType == "FRIENDLY_NPC"
+end
+
 local function UnitGroup(unitType)
     if unitType == "ENEMY_PLAYER" then return "enemyPlayer" end
     if unitType == "ENEMY_PET" then return "enemyPet" end
@@ -139,11 +143,23 @@ local function IsFriendlyAuraWhitelisted(db, name, spellID)
 end
 
 local function AuraAllowed(frame, unit, unitDB, db)
-    if not frame or not unit or not unitDB or unitDB.enable == false then return false end
-    if frame.UnitType ~= "ENEMY_PLAYER" and frame.UnitType ~= "ENEMY_PET" then return false end
+    if not frame or not unit then return false end
+    if UnitIsUnit(unit, "player") then return false end
+
+    if IsNPCUnitType(frame.UnitType) then
+        -- NPC auras are hard-target only. This mirrors the NPC castbar proof path
+        -- and avoids leaking target auras onto same-name mobs.
+        if unit ~= "target" then return false end
+        if not NP.IsNativeTargetNPCPlate or not NP:IsNativeTargetNPCPlate(frame) then return false end
+        local targetType = NP.GetUnitTypeFromUnit and NP:GetUnitTypeFromUnit("target") or nil
+        if not IsNPCUnitType(targetType) then return false end
+    else
+        if not unitDB or unitDB.enable == false then return false end
+        if frame.UnitType ~= "ENEMY_PLAYER" and frame.UnitType ~= "ENEMY_PET" then return false end
+    end
+
     if db.showOnlyInCombat and not UnitAffectingCombat("player") then return false end
     if db.showUnitInCombat and not UnitAffectingCombat(unit) then return false end
-    if UnitIsUnit(unit, "player") then return false end
     return true
 end
 
@@ -446,7 +462,8 @@ function NP:Configure_Auras(frame)
         db = self.db and self.db.auras
         unitDB = db and GetUnitDB(db, frame.UnitType)
     end
-    if not db or db.enable == false or not unitDB or unitDB.enable == false then
+    local isNPCAuraPlate = IsNPCUnitType(frame.UnitType)
+    if not db or db.enable == false or (not isNPCAuraPlate and (not unitDB or unitDB.enable == false)) then
         frame.Auras:Hide()
         return
     end
@@ -477,7 +494,15 @@ function NP:GetAuraUnit(frame)
     -- No trusted token means no aura. Missing an aura is safer than showing it on the wrong plate.
     local unit = frame.unit
     if unit and UnitExists(unit) then
-        if unit == "target" or unit == "mouseover" then
+        if unit == "target" then
+            local targetType = self.GetUnitTypeFromUnit and self:GetUnitTypeFromUnit("target") or nil
+            if IsNPCUnitType(targetType) or IsNPCUnitType(frame.UnitType) then
+                if self.IsNativeTargetNPCPlate and self:IsNativeTargetNPCPlate(frame) then return unit end
+                return nil
+            end
+            if self:IsUnitPlate(frame, unit) then return unit end
+            return nil
+        elseif unit == "mouseover" then
             if self:IsUnitPlate(frame, unit) then return unit end
             return nil
         end
