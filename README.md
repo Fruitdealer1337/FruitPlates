@@ -8,6 +8,8 @@ This project is heavily arena oriented, but also works smoothly in the open worl
 
 It focuses on clean visuals, useful information, and performance friendly nameplate handling without relying on awesomewotlk and its APIs.
 
+### **!!! IF YOU CUSTOMIZED YOUR AuraPriorityData.lua MAKE SURE TO BACK IT UP AND COPY IT BACK WITH EACH UPDATE !!!**
+
 ---
 
 ## Preview
