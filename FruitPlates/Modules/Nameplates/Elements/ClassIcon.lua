@@ -29,12 +29,14 @@ local function ClassIconAllowed(frame)
 
     local db = NP.db and NP.db.icons
     if not db or db.enable == false then return false end
-    if db.mode ~= "CLASS" and db.mode ~= "BOTH" then return false end
+
+    local family = PlateIconFamily(frame.UnitType)
+    local mode = (family == "friendly" and (db.friendlyMode or db.mode)) or (db.enemyMode or db.mode) or "BOTH"
+    if mode ~= "CLASS" and mode ~= "BOTH" then return false end
 
     local classDB = db.classIcons or {}
     if classDB.enable == false then return false end
 
-    local family = PlateIconFamily(frame.UnitType)
     if classDB[family] == false then return false end
 
     return true
@@ -172,10 +174,15 @@ function NP:Configure_ClassIcon(frame)
 
     local db = self.db.icons or {}
     local classDB = db.classIcons or {}
-    local size = classDB.size or db.size or 18
     local x = classDB.xOffset
     local y = classDB.yOffset
     local family = PlateIconFamily(frame.UnitType)
+    local size = classDB.size or db.size or 18
+    if family == "enemy" and classDB.enemySize ~= nil then
+        size = classDB.enemySize
+    elseif family == "friendly" and classDB.friendlySize ~= nil then
+        size = classDB.friendlySize
+    end
 
     if family == "enemy" then
         if classDB.enemyXOffset ~= nil then x = classDB.enemyXOffset end
@@ -245,7 +252,14 @@ function NP:Update_ClassIcon(frame)
 
     local db = self.db.icons or {}
     local classDB = db.classIcons or {}
-    local zoom = tonumber(classDB.zoom) or 0
+    local family = PlateIconFamily(frame.UnitType)
+    local zoom = classDB.zoom
+    if family == "enemy" and classDB.enemyZoom ~= nil then
+        zoom = classDB.enemyZoom
+    elseif family == "friendly" and classDB.friendlyZoom ~= nil then
+        zoom = classDB.friendlyZoom
+    end
+    zoom = tonumber(zoom) or 0
     if zoom < 0 then zoom = 0 end
     if zoom > 20 then zoom = 20 end
 

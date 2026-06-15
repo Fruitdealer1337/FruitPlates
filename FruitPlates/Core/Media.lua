@@ -3,6 +3,7 @@ local FP = _G.FruitPlates
 local STATUSBAR_TEXTURES = {
     {label = "FurtiPlates Shade", value = "FurtiPlates Shade", file = [[Textures\normTex.tga]]},
     {label = "FruitPlates Flat", value = "FruitPlates Flat", file = [[Textures\normTex2.tga]]},
+    {label = "Flat", value = "Flat", file = [[Textures\Statusbars\Flat.blp]]},
     {label = "Aluminium", value = "Aluminium", file = [[Textures\Statusbars\Aluminium.tga]]},
     {label = "Armory", value = "Armory", file = [[Textures\Statusbars\Armory.tga]]},
     {label = "BantoBar", value = "BantoBar", file = [[Textures\Statusbars\BantoBar.tga]]},

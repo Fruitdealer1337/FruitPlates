@@ -197,6 +197,9 @@ FP.Defaults = {
 					["enemyPet"] = {
 						["enable"] = true,
 					},
+					["npcTarget"] = {
+						["enable"] = true,
+					},
 				},
 				["showDecimals"] = true,
 			},

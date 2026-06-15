@@ -50,8 +50,10 @@ function FP:CleanupAurasDB()
         local units = auras.units
         units.enemyPlayer = units.enemyPlayer or {}
         units.enemyPet = units.enemyPet or {}
+        units.npcTarget = units.npcTarget or {}
         if units.enemyPlayer.enable == nil then units.enemyPlayer.enable = true end
         if units.enemyPet.enable == nil then units.enemyPet.enable = true end
+        if units.npcTarget.enable == nil then units.npcTarget.enable = true end
         units.friendlyPlayer = nil
         units.friendlyPet = nil
         units.enemyNPC = nil
@@ -73,8 +75,39 @@ function FP:CleanupAurasDB()
     if friendly.row.enable == nil then friendly.row.enable = true end
 end
 
+
+function FP:MigrateIconDB()
+    local profile = FruitPlatesDB and FruitPlatesDB.profile
+    local icons = profile and profile.nameplates and profile.nameplates.icons
+    if not icons then return end
+
+    icons.raidIcons = icons.raidIcons or {}
+    icons.classIcons = icons.classIcons or {}
+
+    local raidDB = icons.raidIcons
+    local classDB = icons.classIcons
+
+    if icons.enemyMode == nil then icons.enemyMode = icons.mode or "BOTH" end
+    if icons.friendlyMode == nil then icons.friendlyMode = icons.mode or "BOTH" end
+
+    local oldRaidSize = raidDB.size or icons.size or 18
+    if raidDB.enemySize == nil then raidDB.enemySize = oldRaidSize end
+    if raidDB.friendlySize == nil then raidDB.friendlySize = oldRaidSize end
+    if raidDB.npcSize == nil then raidDB.npcSize = oldRaidSize end
+    if raidDB.petSize == nil then raidDB.petSize = oldRaidSize end
+
+    local oldClassSize = classDB.size or icons.size or 17
+    if classDB.enemySize == nil then classDB.enemySize = oldClassSize end
+    if classDB.friendlySize == nil then classDB.friendlySize = oldClassSize end
+
+    local oldClassZoom = classDB.zoom or 0
+    if classDB.enemyZoom == nil then classDB.enemyZoom = oldClassZoom end
+    if classDB.friendlyZoom == nil then classDB.friendlyZoom = oldClassZoom end
+end
+
 function FP:InitializeDatabase()
     FruitPlatesDB = FruitPlatesDB or {}
+    self:MigrateIconDB()
     FruitPlatesDB.profile = self:MergeDefaults(self.Defaults, FruitPlatesDB.profile)
     self.db = FruitPlatesDB.profile
     self:CleanupAurasDB()

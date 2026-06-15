@@ -81,6 +81,7 @@ end
 local function UnitGroup(unitType)
     if unitType == "ENEMY_PLAYER" then return "enemyPlayer" end
     if unitType == "ENEMY_PET" then return "enemyPet" end
+    if IsNPCUnitType(unitType) then return "npcTarget" end
     return nil
 end
 
@@ -143,19 +144,18 @@ local function IsFriendlyAuraWhitelisted(db, name, spellID)
 end
 
 local function AuraAllowed(frame, unit, unitDB, db)
-    if not frame or not unit then return false end
+    if not frame or not unit or not unitDB or unitDB.enable == false then return false end
     if UnitIsUnit(unit, "player") then return false end
 
     if IsNPCUnitType(frame.UnitType) then
-        -- NPC auras are hard-target only. This mirrors the NPC castbar proof path
-        -- and avoids leaking target auras onto same-name mobs.
+        -- NPC auras are hard-target only. Reuse the same physical target proof
+        -- used by NPC castbars, so same-name mob clusters do not inherit target auras.
         if unit ~= "target" then return false end
         if not NP.IsNativeTargetNPCPlate or not NP:IsNativeTargetNPCPlate(frame) then return false end
         local targetType = NP.GetUnitTypeFromUnit and NP:GetUnitTypeFromUnit("target") or nil
         if not IsNPCUnitType(targetType) then return false end
-    else
-        if not unitDB or unitDB.enable == false then return false end
-        if frame.UnitType ~= "ENEMY_PLAYER" and frame.UnitType ~= "ENEMY_PET" then return false end
+    elseif frame.UnitType ~= "ENEMY_PLAYER" and frame.UnitType ~= "ENEMY_PET" then
+        return false
     end
 
     if db.showOnlyInCombat and not UnitAffectingCombat("player") then return false end
@@ -462,8 +462,7 @@ function NP:Configure_Auras(frame)
         db = self.db and self.db.auras
         unitDB = db and GetUnitDB(db, frame.UnitType)
     end
-    local isNPCAuraPlate = IsNPCUnitType(frame.UnitType)
-    if not db or db.enable == false or (not isNPCAuraPlate and (not unitDB or unitDB.enable == false)) then
+    if not db or db.enable == false or not unitDB or unitDB.enable == false then
         frame.Auras:Hide()
         return
     end

@@ -15,13 +15,29 @@ function NP:Configure_RaidIcon(frame)
     local raidDB = db.raidIcons or db
     local family = PlateIconFamily(frame.UnitType)
 
+    local mode = "RAID"
+    if family == "enemy" then
+        mode = db.enemyMode or db.mode or "BOTH"
+    elseif family == "friendly" then
+        mode = db.friendlyMode or db.mode or "BOTH"
+    end
+
     local enabled = db.enable ~= false
         and raidDB.enable ~= false
-        and db.mode ~= "CLASS"
+        and mode ~= "CLASS"
         and raidDB[family] ~= false
 
     if enabled then
         local size = raidDB.size or db.size or 18
+        if family == "enemy" and raidDB.enemySize ~= nil then
+            size = raidDB.enemySize
+        elseif family == "friendly" and raidDB.friendlySize ~= nil then
+            size = raidDB.friendlySize
+        elseif family == "npc" and raidDB.npcSize ~= nil then
+            size = raidDB.npcSize
+        elseif family == "pet" and raidDB.petSize ~= nil then
+            size = raidDB.petSize
+        end
         local x = raidDB.xOffset
         local y = raidDB.yOffset
 
@@ -31,6 +47,9 @@ function NP:Configure_RaidIcon(frame)
         elseif family == "friendly" then
             if raidDB.friendlyXOffset ~= nil then x = raidDB.friendlyXOffset end
             if raidDB.friendlyYOffset ~= nil then y = raidDB.friendlyYOffset end
+        elseif family == "npc" then
+            if raidDB.npcXOffset ~= nil then x = raidDB.npcXOffset end
+            if raidDB.npcYOffset ~= nil then y = raidDB.npcYOffset end
         elseif family == "pet" then
             if raidDB.petXOffset ~= nil then x = raidDB.petXOffset end
             if raidDB.petYOffset ~= nil then y = raidDB.petYOffset end

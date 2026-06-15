@@ -16,6 +16,7 @@ local UNIT_GROUPS = {
 local TEXTURES = {
     {label = "FurtiPlates Shade", value = "FurtiPlates Shade"},
     {label = "FruitPlates Flat", value = "FruitPlates Flat"},
+    {label = "Flat", value = "Flat"},
     {label = "Aluminium", value = "Aluminium"},
     {label = "Armory", value = "Armory"},
     {label = "BantoBar", value = "BantoBar"},
@@ -1157,16 +1158,16 @@ function Config:BuildPlateIconsTab(group)
         function() return db[family] ~= false end,
         function(v) db[family] = v; db.raidIcons[family] = v; db.classIcons[family] = v end)
     self:CreateDropdown(p, "Icon Mode", nil, 210, -54, 190, ICON_MODES,
-        function() return db.mode or "RAID" end,
-        function(v) db.mode = v end)
+        function() return db[family .. "Mode"] or db.mode or "RAID" end,
+        function(v) db[family .. "Mode"] = v end)
 
     local y = -146
     local raidOpen = self:CreatePlateCollapsibleSection(p, group, "Raid Icon", "icons.raid", y)
     y = y - 70
     if raidOpen then
         self:CreateSlider(p, "Raid Size", nil, 24, y - 10, 8, 48, 1,
-            function() return db.raidIcons.size or db.size or 18 end,
-            function(v) db.raidIcons.size = v end)
+            function() return db.raidIcons[family .. "Size"] or db.raidIcons.size or db.size or 18 end,
+            function(v) db.raidIcons[family .. "Size"] = v end)
         self:CreateSlider(p, "Raid X", nil, 300, y - 10, -100, 100, 1,
             function() return OffsetGet(db.raidIcons, "X", db.xOffset or 0) end,
             function(v) OffsetSet(db.raidIcons, "X", v) end)
@@ -1180,11 +1181,11 @@ function Config:BuildPlateIconsTab(group)
     y = y - 70
     if classOpen then
         self:CreateSlider(p, "Class Size", nil, 24, y - 10, 8, 48, 1,
-            function() return db.classIcons.size or db.size or 18 end,
-            function(v) db.classIcons.size = v end)
+            function() return db.classIcons[family .. "Size"] or db.classIcons.size or db.size or 18 end,
+            function(v) db.classIcons[family .. "Size"] = v end)
         self:CreateSlider(p, "Zoom In", nil, 300, y - 10, 0, 20, 1,
-            function() return db.classIcons.zoom or 0 end,
-            function(v) db.classIcons.zoom = v end)
+            function() return db.classIcons[family .. "Zoom"] or db.classIcons.zoom or 0 end,
+            function(v) db.classIcons[family .. "Zoom"] = v end)
         self:CreateSlider(p, "Class X", nil, 24, y - 84, -100, 100, 1,
             function() return OffsetGet(db.classIcons, "X", db.xOffset or 0) end,
             function(v) OffsetSet(db.classIcons, "X", v) end)
@@ -1277,16 +1278,26 @@ function Config:BuildPlateHighlightTab(group)
     local settingsOpen = self:CreatePlateCollapsibleSection(p, group, "Settings", "highlight.settings", y)
     y = y - 70
     if settingsOpen then
-        self:CreateDropdown(p, "Highlight Mode", nil, 24, y - 8, 210, HIGHLIGHT_MODES,
-            function() return hdb().mode or "HEALTHBAR_ICON" end,
-            function(v) each(function(db) self:EnsureHighlightDB(db).mode = v end) end)
-        self:CreateSlider(p, "Glow Size", nil, 300, y - 31, 2, 14, 1,
-            function() return hdb().padding or 8 end,
-            function(v) each(function(db) self:EnsureHighlightDB(db).padding = v end) end)
-        self:CreateSlider(p, "Glow Alpha", nil, 24, y - 106, 0.05, 1.0, 0.05,
-            function() return hdb().alpha or 0.85 end,
-            function(v) each(function(db) self:EnsureHighlightDB(db).alpha = v end) end)
-        y = y - 220
+        if group ~= "npcpet" then
+            self:CreateDropdown(p, "Highlight Mode", nil, 24, y - 8, 210, HIGHLIGHT_MODES,
+                function() return hdb().mode or "HEALTHBAR_ICON" end,
+                function(v) each(function(db) self:EnsureHighlightDB(db).mode = v end) end)
+            self:CreateSlider(p, "Glow Size", nil, 300, y - 31, 2, 14, 1,
+                function() return hdb().padding or 8 end,
+                function(v) each(function(db) self:EnsureHighlightDB(db).padding = v end) end)
+            self:CreateSlider(p, "Glow Alpha", nil, 24, y - 106, 0.05, 1.0, 0.05,
+                function() return hdb().alpha or 0.85 end,
+                function(v) each(function(db) self:EnsureHighlightDB(db).alpha = v end) end)
+            y = y - 220
+        else
+            self:CreateSlider(p, "Glow Size", nil, 24, y - 31, 2, 14, 1,
+                function() return hdb().padding or 8 end,
+                function(v) each(function(db) self:EnsureHighlightDB(db).padding = v end) end)
+            self:CreateSlider(p, "Glow Alpha", nil, 300, y - 31, 0.05, 1.0, 0.05,
+                function() return hdb().alpha or 0.85 end,
+                function(v) each(function(db) self:EnsureHighlightDB(db).alpha = v end) end)
+            y = y - 145
+        end
     end
 
     local colorOpen = self:CreatePlateCollapsibleSection(p, group, "Color", "highlight.color", y)
@@ -1512,49 +1523,40 @@ function Config:BuildNPCPetIconsTab()
 
     self:CreateCheck(p, "Enable NPC Icons", nil, 22, -54,
         function() return db.npc ~= false end,
-        function(v) db.npc = v; db.raidIcons.npc = v; db.classIcons.npc = v end)
-    self:CreateDropdown(p, "Icon Mode", nil, 210, -54, 190, ICON_MODES,
-        function() return db.mode or "RAID" end,
-        function(v) db.mode = v end)
+        function(v) db.npc = v; db.raidIcons.npc = v end)
     self:CreateCheck(p, "Enable Pet Icons", nil, 22, -102,
         function() return db.pet ~= false end,
-        function(v) db.pet = v; db.raidIcons.pet = v; db.classIcons.pet = v end)
+        function(v) db.pet = v; db.raidIcons.pet = v end)
 
     local y = -174
     local npcOpen = self:CreatePlateCollapsibleSection(p, "npcpet", "NPC Icons", "icons.npc", y)
     y = y - 70
     if npcOpen then
-        self:CreateSlider(p, "NPC Raid X", nil, 24, y - 10, -100, 100, 1,
+        self:CreateSlider(p, "NPC Raid Size", nil, 24, y - 10, 8, 48, 1,
+            function() return db.raidIcons.npcSize or db.raidIcons.size or db.size or 18 end,
+            function(v) db.raidIcons.npcSize = v end)
+        self:CreateSlider(p, "NPC Raid X", nil, 300, y - 10, -100, 100, 1,
             function() return db.raidIcons.npcXOffset or db.raidIcons.xOffset or db.xOffset or 0 end,
             function(v) db.raidIcons.npcXOffset = v end)
-        self:CreateSlider(p, "NPC Raid Y", nil, 300, y - 10, -80, 100, 1,
+        self:CreateSlider(p, "NPC Raid Y", nil, 24, y - 84, -80, 100, 1,
             function() return db.raidIcons.npcYOffset or db.raidIcons.yOffset or db.yOffset or 10 end,
             function(v) db.raidIcons.npcYOffset = v end)
-        y = y - 150
+        y = y - 190
     end
 
     local petOpen = self:CreatePlateCollapsibleSection(p, "npcpet", "Pet Icons", "icons.pet", y)
     y = y - 70
     if petOpen then
-        self:CreateSlider(p, "Pet Raid X", nil, 24, y - 10, -100, 100, 1,
+        self:CreateSlider(p, "Pet Raid Size", nil, 24, y - 10, 8, 48, 1,
+            function() return db.raidIcons.petSize or db.raidIcons.npcSize or db.raidIcons.size or db.size or 18 end,
+            function(v) db.raidIcons.petSize = v end)
+        self:CreateSlider(p, "Pet Raid X", nil, 300, y - 10, -100, 100, 1,
             function() return db.raidIcons.petXOffset or db.raidIcons.npcXOffset or db.raidIcons.xOffset or db.xOffset or 0 end,
             function(v) db.raidIcons.petXOffset = v end)
-        self:CreateSlider(p, "Pet Raid Y", nil, 300, y - 10, -80, 100, 1,
+        self:CreateSlider(p, "Pet Raid Y", nil, 24, y - 84, -80, 100, 1,
             function() return db.raidIcons.petYOffset or db.raidIcons.npcYOffset or db.raidIcons.yOffset or db.yOffset or 10 end,
             function(v) db.raidIcons.petYOffset = v end)
-        y = y - 150
-    end
-
-    local sharedOpen = self:CreatePlateCollapsibleSection(p, "npcpet", "Shared Sizes", "icons.shared", y)
-    y = y - 70
-    if sharedOpen then
-        self:CreateSlider(p, "Raid Size", nil, 24, y - 10, 8, 48, 1,
-            function() return db.raidIcons.size or db.size or 18 end,
-            function(v) db.raidIcons.size = v end)
-        self:CreateSlider(p, "Class Size", nil, 300, y - 10, 8, 48, 1,
-            function() return db.classIcons.size or db.size or 18 end,
-            function(v) db.classIcons.size = v end)
-        y = y - 150
+        y = y - 190
     end
 
     p:SetHeight(math.max(360, math.abs(y) + 120))
@@ -1767,16 +1769,16 @@ function Config:BuildEnemyPlateIconsTab()
         function() return db[family] ~= false end,
         function(v) db[family] = v; db.raidIcons[family] = v; db.classIcons[family] = v end)
     self:CreateDropdown(p, "Icon Mode", nil, 210, -54, 190, ICON_MODES,
-        function() return db.mode or "RAID" end,
-        function(v) db.mode = v end)
+        function() return db[family .. "Mode"] or db.mode or "RAID" end,
+        function(v) db[family .. "Mode"] = v end)
 
     local y = -146
     local raidOpen = self:CreateEnemyCollapsibleSection(p, "Raid Icon", "icons.raid", y)
     y = y - 70
     if raidOpen then
         self:CreateSlider(p, "Raid Size", nil, 24, y - 10, 8, 48, 1,
-            function() return db.raidIcons.size or db.size or 18 end,
-            function(v) db.raidIcons.size = v end)
+            function() return db.raidIcons[family .. "Size"] or db.raidIcons.size or db.size or 18 end,
+            function(v) db.raidIcons[family .. "Size"] = v end)
         self:CreateSlider(p, "Raid X", nil, 300, y - 10, -100, 100, 1,
             function() return OffsetGet(db.raidIcons, "X", db.xOffset or 0) end,
             function(v) OffsetSet(db.raidIcons, "X", v) end)
@@ -1790,11 +1792,11 @@ function Config:BuildEnemyPlateIconsTab()
     y = y - 70
     if classOpen then
         self:CreateSlider(p, "Class Size", nil, 24, y - 10, 8, 48, 1,
-            function() return db.classIcons.size or db.size or 18 end,
-            function(v) db.classIcons.size = v end)
+            function() return db.classIcons[family .. "Size"] or db.classIcons.size or db.size or 18 end,
+            function(v) db.classIcons[family .. "Size"] = v end)
         self:CreateSlider(p, "Zoom In", nil, 300, y - 10, 0, 20, 1,
-            function() return db.classIcons.zoom or 0 end,
-            function(v) db.classIcons.zoom = v end)
+            function() return db.classIcons[family .. "Zoom"] or db.classIcons.zoom or 0 end,
+            function(v) db.classIcons[family .. "Zoom"] = v end)
         self:CreateSlider(p, "Class X", nil, 24, y - 84, -100, 100, 1,
             function() return OffsetGet(db.classIcons, "X", db.xOffset or 0) end,
             function(v) OffsetSet(db.classIcons, "X", v) end)
@@ -2162,8 +2164,10 @@ function Config:EnsureAurasDB()
     local units = db.auras.units
     units.enemyPlayer = units.enemyPlayer or {}
     units.enemyPet = units.enemyPet or {}
+    units.npcTarget = units.npcTarget or {}
     if units.enemyPlayer.enable == nil then units.enemyPlayer.enable = true end
     if units.enemyPet.enable == nil then units.enemyPet.enable = true end
+    if units.npcTarget.enable == nil then units.npcTarget.enable = true end
     units.friendlyPlayer = nil
     units.friendlyPet = nil
     units.enemyNPC = nil
@@ -2398,10 +2402,11 @@ function Config:BuildAurasReadmeTab()
     preview:SetHeight(159)
 
     self:CreateDescription(p, "Use the Layout tab to move/resize or completely disable each section.", 24, -222, 560)
-    self:CreateDescription(p, "For now, aura priorities are edited manually in:", 24, -272, 560)
-    self:CreateDescription(p, "Modules/Nameplates/AuraPriorityData.lua", 24, -296, 560)
-    self:CreateDescription(p, "Aura editing will be moved into the GUI in a future build.", 24, -346, 560)
-    self:CreateDescription(p, "Use Test Mode in the General tab to preview this layout.", 24, -396, 560)
+    self:CreateDescription(p, "NPC auras are hard-target only and use the same physical target proof as NPC castbars, so same-name mobs do not inherit target auras.", 24, -272, 560)
+    self:CreateDescription(p, "For now, aura priorities are edited manually in:", 24, -322, 560)
+    self:CreateDescription(p, "Modules/Nameplates/AuraPriorityData.lua", 24, -346, 560)
+    self:CreateDescription(p, "Aura editing will be moved into the GUI in a future build.", 24, -396, 560)
+    self:CreateDescription(p, "Use Test Mode in the General tab to preview this layout.", 24, -446, 560)
     p:SetHeight(560)
 end
 
@@ -2418,8 +2423,11 @@ function Config:BuildAurasGeneralTab()
     self:CreateCheck(p, "Enemy Pets", nil, 390, -46,
         function() return self:GetAuraUnitDB("enemyPet").enable ~= false end,
         function(v) self:GetAuraUnitDB("enemyPet").enable = v end)
+    self:CreateCheck(p, "NPC Target", "Show auras on the physically proven hard-target NPC plate only. No focus, mouseover, or same-name matching.", 22, -84,
+        function() return self:GetAuraUnitDB("npcTarget").enable ~= false end,
+        function(v) self:GetAuraUnitDB("npcTarget").enable = v end)
 
-    local y = -118
+    local y = -156
     local settingsOpen = self:CreateAurasCollapsibleSection(p, "Settings", "general.settings", y)
     y = y - 70
     if settingsOpen then
