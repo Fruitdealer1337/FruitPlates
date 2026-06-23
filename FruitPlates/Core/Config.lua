@@ -51,6 +51,11 @@ local ICON_MODES = {
     {label = "Both", value = "BOTH"},
 }
 
+local CLASS_ICON_STYLES = {
+    {label = "Square", value = "SQUARE"},
+    {label = "Circle", value = "CIRCLE"},
+}
+
 local PLATE_TABS = {
     {label = "Healthbar", value = "healthbar", width = 106},
     {label = "Text", value = "text", width = 86},
@@ -1160,8 +1165,11 @@ function Config:BuildPlateIconsTab(group)
     self:CreateDropdown(p, "Icon Mode", nil, 210, -54, 190, ICON_MODES,
         function() return db[family .. "Mode"] or db.mode or "RAID" end,
         function(v) db[family .. "Mode"] = v end)
+    self:CreateDropdown(p, "Class Style", nil, 210, -124, 190, CLASS_ICON_STYLES,
+        function() return db.classIcons[family .. "Style"] or "SQUARE" end,
+        function(v) db.classIcons[family .. "Style"] = v end)
 
-    local y = -146
+    local y = -198
     local raidOpen = self:CreatePlateCollapsibleSection(p, group, "Raid Icon", "icons.raid", y)
     y = y - 70
     if raidOpen then
@@ -1192,7 +1200,7 @@ function Config:BuildPlateIconsTab(group)
         self:CreateSlider(p, "Class Y", nil, 300, y - 84, -80, 100, 1,
             function() return OffsetGet(db.classIcons, "Y", db.yOffset or 10) end,
             function(v) OffsetSet(db.classIcons, "Y", v) end)
-        y = y - 210
+        y = y - 190
     end
 
     p:SetHeight(math.max(360, math.abs(y) + 120))
@@ -1771,8 +1779,11 @@ function Config:BuildEnemyPlateIconsTab()
     self:CreateDropdown(p, "Icon Mode", nil, 210, -54, 190, ICON_MODES,
         function() return db[family .. "Mode"] or db.mode or "RAID" end,
         function(v) db[family .. "Mode"] = v end)
+    self:CreateDropdown(p, "Class Style", nil, 210, -124, 190, CLASS_ICON_STYLES,
+        function() return db.classIcons[family .. "Style"] or "SQUARE" end,
+        function(v) db.classIcons[family .. "Style"] = v end)
 
-    local y = -146
+    local y = -198
     local raidOpen = self:CreateEnemyCollapsibleSection(p, "Raid Icon", "icons.raid", y)
     y = y - 70
     if raidOpen then
@@ -1803,7 +1814,7 @@ function Config:BuildEnemyPlateIconsTab()
         self:CreateSlider(p, "Class Y", nil, 300, y - 84, -80, 100, 1,
             function() return OffsetGet(db.classIcons, "Y", db.yOffset or 10) end,
             function(v) OffsetSet(db.classIcons, "Y", v) end)
-        y = y - 210
+        y = y - 190
     end
 
     p:SetHeight(math.max(360, math.abs(y) + 120))
