@@ -1763,6 +1763,8 @@ function NP:HideNativePlateParts(frame, force)
         FP:WipeObject(frame.oldCastBar.Icon)
         FP:WipeObject(frame.oldCastBar.Shield)
     end
+    FP:WipeObject(frame.oldCastBarBorder)
+    FP:WipeObject(frame.oldBorder)
     FP:WipeObject(frame.oldHighlight)
     FP:WipeObject(frame.Threat)
     if frame.BossIcon then frame.BossIcon:SetAlpha(0) end
@@ -1924,6 +1926,7 @@ function NP:SetMouseoverFrame(frame)
     if frame.oldCastBar then
         FP:WipeObject(frame.oldCastBar)
     end
+    FP:WipeObject(frame.oldCastBarBorder)
 
     if frame.isMouseover ~= isMouseover then
         frame.isMouseover = isMouseover
@@ -2163,6 +2166,8 @@ function NP:OnCreated(plate)
     unitFrame.oldName = Name
     unitFrame.oldHighlight = Highlight
     unitFrame.oldLevel = Level
+    unitFrame.oldBorder = Border
+    unitFrame.oldCastBarBorder = CastBarBorder
     unitFrame.Threat = Threat
     unitFrame.BossIcon = BossIcon
     unitFrame.EliteIcon = EliteIcon
