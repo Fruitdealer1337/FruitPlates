@@ -43,6 +43,8 @@ NP.NativeClassProbeQueue = NP.NativeClassProbeQueue or {}
 NP.ClassCache = NP.ClassCache or {}
 NP.ArenaCastbarNameToUnit = NP.ArenaCastbarNameToUnit or {}
 NP.ArenaCastbarUnitToName = NP.ArenaCastbarUnitToName or {}
+NP.ArenaPlayerNameToUnit = NP.ArenaPlayerNameToUnit or {}
+NP.ArenaPetNameToUnit = NP.ArenaPetNameToUnit or {}
 NP.ArenaCastbarLastUpdate = 0
 NP.Perf = NP.Perf or {enabled = false, counters = {}, lastCounters = {}, lastTime = 0, visible = 0, nativeProbes = 0}
 
@@ -67,6 +69,14 @@ local heavyUpdatesThisFrame = 0
 local function ClearTable(tbl)
     if wipe then return wipe(tbl) end
     for k in pairs(tbl) do tbl[k] = nil end
+end
+
+local function IsArenaPlayerToken(unit)
+    return type(unit) == "string" and string.find(unit, "^arena%d$")
+end
+
+local function IsArenaPetToken(unit)
+    return type(unit) == "string" and string.find(unit, "^arenapet%d$")
 end
 
 local function ValidClass(value)
@@ -540,6 +550,13 @@ end
 function NP:GetCachedPetType(frame)
     if not frame then return nil end
 
+    if frame.UnitName and self:HasArenaPlayerPetNameCollision(frame.UnitName) then
+        local matched = self:GetArenaSameNameUnitForPlate(frame)
+        if not IsArenaPetToken(matched) then
+            return nil
+        end
+    end
+
     if frame._fruitplatesPetUnitType == "ENEMY_PET" or frame._fruitplatesPetUnitType == "FRIENDLY_PET" then
         return frame._fruitplatesPetUnitType
     end
@@ -615,12 +632,15 @@ end
 function NP:RebuildArenaCastbarMap()
     ClearTable(self.ArenaCastbarNameToUnit)
     ClearTable(self.ArenaCastbarUnitToName)
+    ClearTable(self.ArenaPlayerNameToUnit)
+    ClearTable(self.ArenaPetNameToUnit)
 
     for i = 1, 5 do
         local unit = "arena" .. i
         if UnitExists(unit) then
             local name = CleanName(UnitName(unit))
             if name and name ~= "" then
+                self.ArenaPlayerNameToUnit[name] = unit
                 self.ArenaCastbarNameToUnit[name] = unit
                 self.ArenaCastbarUnitToName[unit] = name
             end
@@ -630,7 +650,10 @@ function NP:RebuildArenaCastbarMap()
         if UnitExists(pet) then
             local petName = CleanName(UnitName(pet))
             if petName and petName ~= "" then
-                self.ArenaCastbarNameToUnit[petName] = pet
+                self.ArenaPetNameToUnit[petName] = pet
+                if not self.ArenaPlayerNameToUnit[petName] then
+                    self.ArenaCastbarNameToUnit[petName] = pet
+                end
                 self.ArenaCastbarUnitToName[pet] = petName
             end
         end
@@ -668,6 +691,83 @@ function NP:GetArenaCastbarUnitByName(name)
     end
 
     return nil
+end
+
+
+function NP:EnsureArenaCastbarMap()
+    if GetTime() - (self.ArenaCastbarLastUpdate or 0) > 0.5 then
+        self:RebuildArenaCastbarMap()
+    end
+end
+
+function NP:HasArenaPlayerPetNameCollision(name)
+    name = CleanName(name)
+    if not name or name == "" then return false end
+
+    self:EnsureArenaCastbarMap()
+    local playerUnit = self.ArenaPlayerNameToUnit[name]
+    local petUnit = self.ArenaPetNameToUnit[name]
+    return playerUnit and petUnit and UnitExists(playerUnit) and UnitExists(petUnit)
+end
+
+function NP:GetArenaSameNameUnitForPlate(frame)
+    if not frame or not frame.UnitName then return nil end
+
+    local name = CleanName(frame.UnitName)
+    if not name or name == "" then return nil end
+
+    self:EnsureArenaCastbarMap()
+    local playerUnit = self.ArenaPlayerNameToUnit[name]
+    local petUnit = self.ArenaPetNameToUnit[name]
+    if not playerUnit or not petUnit or not UnitExists(playerUnit) or not UnitExists(petUnit) then
+        return nil
+    end
+
+    local plateMax = self:GetPlateMaxHealth(frame)
+    local playerMax = tonumber(UnitHealthMax(playerUnit))
+    local petMax = tonumber(UnitHealthMax(petUnit))
+    if not plateMax or not playerMax or not petMax or playerMax <= 0 or petMax <= 0 then
+        return nil
+    end
+
+    if plateMax <= 100 and (playerMax > 500 or petMax > 500) then
+        return nil
+    end
+
+    local playerDiff = math.abs(plateMax - playerMax)
+    local petDiff = math.abs(plateMax - petMax)
+    local tolerance = math.max(2, plateMax * 0.02)
+
+    if math.abs(playerDiff - petDiff) <= tolerance then
+        return nil
+    end
+
+    return (playerDiff < petDiff) and playerUnit or petUnit
+end
+
+function NP:GetArenaCastbarUnitForPlate(frame)
+    if not frame or not frame.UnitName then return nil end
+
+    if self:HasArenaPlayerPetNameCollision(frame.UnitName) then
+        local matched = self:GetArenaSameNameUnitForPlate(frame)
+        if matched then return matched end
+
+        if frame.UnitType == "ENEMY_PLAYER" or frame.UnitType == "FRIENDLY_PLAYER" then
+            local name = CleanName(frame.UnitName)
+            local unit = name and self.ArenaPlayerNameToUnit[name]
+            return unit and UnitExists(unit) and unit or nil
+        end
+
+        if frame.UnitType == "ENEMY_PET" or frame.UnitType == "FRIENDLY_PET" then
+            local name = CleanName(frame.UnitName)
+            local unit = name and self.ArenaPetNameToUnit[name]
+            return unit and UnitExists(unit) and unit or nil
+        end
+
+        return nil
+    end
+
+    return self:GetArenaCastbarUnitByName(frame.UnitName)
 end
 
 function NP:GetVisiblePlateName(frame)
@@ -1119,7 +1219,7 @@ end
 function NP:ApplyArenaPlayerUnit(frame)
     if not frame or not frame.UnitName then return false end
 
-    local unit = self:GetArenaCastbarUnitByName(frame.UnitName)
+    local unit = self:GetArenaCastbarUnitForPlate(frame)
     if not unit or not UnitExists(unit) then return false end
 
     if self:IsMageMirrorImagePlate(frame, unit) then
@@ -1194,7 +1294,7 @@ function NP:UpdateArenaCastbarUnit(frame)
         return nil
     end
 
-    local unit = self:GetArenaCastbarUnitByName(frame.UnitName)
+    local unit = self:GetArenaCastbarUnitForPlate(frame)
     if unit and not self:IsMageMirrorImagePlate(frame, unit) then
         frame.castbarUnit = unit
         return unit
