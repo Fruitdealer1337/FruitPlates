@@ -47,6 +47,17 @@ local function ResetCast(castBar)
     end
 end
 
+local function HideNativeCastBarParts(frame)
+    if not frame then return end
+
+    FP:WipeObject(frame.oldCastBar)
+    if frame.oldCastBar then
+        FP:WipeObject(frame.oldCastBar.Icon)
+        FP:WipeObject(frame.oldCastBar.Shield)
+    end
+    FP:WipeObject(frame.oldCastBarBorder)
+end
+
 local function HasProtectedCastAura(unit)
     if not unit or not UnitExists(unit) then return false end
 
@@ -389,6 +400,7 @@ function NP:Update_CastBar(frame, event, unit)
 
     local db = GetCastBarDBForFrame(self.db, frame)
     if not CastBarAllowedByMode(self.db, frame.UnitType) or not db or not db.enable or not frame.Health or not frame.Health:IsShown() then
+        HideNativeCastBarParts(frame)
         ResetCast(castBar)
         castBar:Hide()
         return
@@ -397,6 +409,7 @@ function NP:Update_CastBar(frame, event, unit)
     unit = unit or frame.unit or frame.castbarUnit
 
     if IsPetUnitType(frame.UnitType) and not PetCastBarAllowed(self.db, frame, unit) then
+        HideNativeCastBarParts(frame)
         ResetCast(castBar)
         castBar:Hide()
         return
@@ -404,6 +417,7 @@ function NP:Update_CastBar(frame, event, unit)
 
     if not unit or not UnitExists(unit) then
         if not castBar.holdTime or castBar.holdTime <= 0 then
+            HideNativeCastBarParts(frame)
             ResetCast(castBar)
             castBar:Hide()
         end
