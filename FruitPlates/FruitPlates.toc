@@ -2,7 +2,7 @@
 ## Title: FruitPlates
 ## Notes: Standalone nameplates for WoW 3.3.5a.
 ## Author: Fruitdealer1337
-## Version: 0.9.8-beta
+## Version: 0.9.8b-beta
 ## SavedVariables: FruitPlatesDB
 
 Core\Init.lua
