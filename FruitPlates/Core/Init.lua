@@ -4,7 +4,7 @@ local FP = _G.FruitPlates or {}
 _G.FruitPlates = FP
 
 FP.name = addonName or "FruitPlates"
-FP.version = "0.9.8-beta"
+FP.version = "0.9.8b-beta"
 FP.modules = FP.modules or {}
 FP.debug = false
 
