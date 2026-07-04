@@ -470,19 +470,23 @@ function NP:Configure_Auras(frame)
     local auras = frame.Auras
     local parent = frame.Health or frame
     local baseLevel = (parent.GetFrameLevel and parent:GetFrameLevel()) or frame:GetFrameLevel() or 1
+    local auraLevel = baseLevel + 24
+    if frame.UnitType == "FRIENDLY_PLAYER" or frame.UnitType == "FRIENDLY_PET" then
+        auraLevel = baseLevel + 90
+    end
 
     if auras._fruitplatesAnchor ~= "PRIORITY"
         or auras._fruitplatesParent ~= parent
-        or auras._fruitplatesLevel ~= baseLevel + 24 then
+        or auras._fruitplatesLevel ~= auraLevel then
         auras:SetParent(frame)
         auras:ClearAllPoints()
         auras:SetPoint("CENTER", parent, "CENTER", 0, 0)
-        if auras.SetFrameLevel then auras:SetFrameLevel(baseLevel + 24) end
+        if auras.SetFrameLevel then auras:SetFrameLevel(auraLevel) end
         auras._fruitplatesAnchor = "PRIORITY"
         auras._fruitplatesParent = parent
         auras._fruitplatesX = nil
         auras._fruitplatesY = nil
-        auras._fruitplatesLevel = baseLevel + 24
+        auras._fruitplatesLevel = auraLevel
     end
 end
 
@@ -1260,7 +1264,7 @@ function NP:RenderFriendlyTestAuras(frame)
     auras:SetParent(frame)
     auras:ClearAllPoints()
     auras:SetPoint("CENTER", parent, "CENTER", 0, 0)
-    if auras.SetFrameLevel then auras:SetFrameLevel(baseLevel + 24) end
+    if auras.SetFrameLevel then auras:SetFrameLevel(baseLevel + 90) end
 
     BuildFriendlyAuraTestRecords(auras)
 
