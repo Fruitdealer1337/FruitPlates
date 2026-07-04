@@ -454,9 +454,10 @@ function NP:GetUnitInfo(frame)
     local r, g, b = frame.oldHealthBar:GetStatusBarColor()
     r, g, b = tonumber(r) or 0, tonumber(g) or 0, tonumber(b) or 0
 
+    local classGuess = self:GetClassFromHealthBarColor(frame)
+
     -- First honor the old Blizzard reaction colors. This must happen before the
-    -- class-color fallback, otherwise bright/white friendly NPC plates can be
-    -- misread as PRIEST and inherit player visuals/icons.
+    -- class-color fallback so clear NPC/reaction plates keep their native bucket.
     if r < 0.05 then
         if b < 0.05 and g > 0.90 then
             return 5, "FRIENDLY_NPC"
@@ -475,16 +476,13 @@ function NP:GetUnitInfo(frame)
         end
     end
 
-    -- Very bright/white or grey nameplate bars are commonly neutral/friendly NPCs
-    -- on old clients/private servers. Do not allow the priest class-color fallback
-    -- to steal these plates.
-    if r > 0.80 and g > 0.80 and b > 0.80 then
-        return 5, "FRIENDLY_NPC"
+    -- Enemy player class-color fallback. Priest class color is bright/white, so
+    -- this must run before the remaining bright fallback.
+    if classGuess then
+        return 3, "ENEMY_PLAYER"
     end
 
-    -- Enemy player class-color fallback. This is intentionally late and is only
-    -- used when the plate did not look like a clear NPC/reaction plate.
-    if self:GetClassFromHealthBarColor(frame) then
+    if r > 0.80 and g > 0.80 and b > 0.80 then
         return 3, "ENEMY_PLAYER"
     end
 
