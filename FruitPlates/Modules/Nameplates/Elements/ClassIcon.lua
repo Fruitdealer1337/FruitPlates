@@ -1,3 +1,4 @@
+-- DIAGNOSTIC TEST 01: retain loaded class-icon textures on clear (enemy + friendly)
 local FP = _G.FruitPlates
 local NP = FP:GetModule("NamePlates")
 
@@ -98,15 +99,11 @@ function NP:ClearClassIcon(frame)
 
     HideClassIconOutline(icon)
     icon._fruitplatesClass = nil
-    icon._fruitplatesTexture = nil
     icon._fruitplatesStyle = nil
     icon._fruitplatesLeft = nil
     icon._fruitplatesRight = nil
     icon._fruitplatesTop = nil
     icon._fruitplatesBottom = nil
-    if icon.Texture then
-        icon.Texture:SetTexture(nil)
-    end
     if icon:IsShown() then
         icon:Hide()
     end
